@@ -51,7 +51,7 @@ class Line:
 
 # Create a Cell class that takes an instance of a Window
 class Cell:
-    def __init__(self, window):
+    def __init__(self, window: Window=None):
         self.lines = []
         self.has_left_wall = True
         self.has_right_wall = True
@@ -68,25 +68,38 @@ class Cell:
         self.__y1 = y1
         self.__x2 = x2
         self.__y2 = y2
-        if self.has_left_wall:
-            left_line = Line(Point(x1, y1), Point(x1, y2))
-            self.lines.append(left_line)
-            self.__win.draw_line(left_line)
 
-        if self.has_right_wall:
-            right_line = Line(Point(x2, y1), Point(x2, y2))
-            self.lines.append(right_line)
-            self.__win.draw_line(right_line)
+        left_line = Line(Point(x1, y1), Point(x1, y2))
+        self.lines.append(left_line)
+        if self.__win:
+            if self.has_left_wall:
+                self.__win.draw_line(left_line)
+            else:
+                self.__win.draw_line(left_line, fill_color="white")
 
-        if self.has_top_wall:
-            top_line = Line(Point(x1, y1), Point(x2, y1))
-            self.lines.append(top_line)
-            self.__win.draw_line(top_line)
+        right_line = Line(Point(x2, y1), Point(x2, y2))
+        self.lines.append(right_line)
+        if self.__win:
+            if self.has_right_wall:
+                self.__win.draw_line(right_line)
+            else:
+                self.__win.draw_line(right_line, fill_color="white")
 
-        if self.has_bottom_wall:
-            bottom_line = Line(Point(x1, y2), Point(x2, y2))
-            self.lines.append(bottom_line)
-            self.__win.draw_line(bottom_line)
+        top_line = Line(Point(x1, y1), Point(x2, y1))
+        self.lines.append(top_line)
+        if self.__win:
+            if self.has_top_wall:
+                self.__win.draw_line(top_line)
+            else:
+                self.__win.draw_line(top_line, fill_color="white")
+
+        bottom_line = Line(Point(x1, y2), Point(x2, y2))
+        self.lines.append(bottom_line)
+        if self.__win:
+            if self.has_bottom_wall:
+                self.__win.draw_line(bottom_line)
+            else:
+                self.__win.draw_line(bottom_line, fill_color="white")
 
     def draw_move(self, to_cell: "Cell", undo: bool = False) -> None:
         if not undo:
@@ -98,7 +111,8 @@ class Cell:
         center_x2 = (to_cell.__x1 + to_cell.__x2) / 2
         center_y2 = (to_cell.__y1 + to_cell.__y2) / 2
         move_line = Line(Point(center_x1, center_y1), Point(center_x2, center_y2))
-        self.__win.draw_line(move_line, fill_color=color)
+        if self.__win:
+            self.__win.draw_line(move_line, fill_color=color)
 
 class Maze:
     def __init__(
@@ -109,7 +123,7 @@ class Maze:
             num_cols: int,
             cell_size_x: float,
             cell_size_y: float,
-            win: Window,
+            win: Window=None,
     ) -> None:
         self.__x1 = x1
         self.__y1 = y1
@@ -133,7 +147,7 @@ class Maze:
         # Draw the cells after they have been created
         for col in range(self.__num_cols):
             for row in range(self.__num_rows):
-                self.__draw_cell(self, col, row)
+                self.__draw_cell(col, row)
 
     def __draw_cell(self, col: int, row: int) -> None:
         x1 = self.__x1 + col * self.__cell_size_x
@@ -141,19 +155,36 @@ class Maze:
         x2 = x1 + self.__cell_size_x
         y2 = y1 + self.__cell_size_y
         cell = self.__cells[col][row]
-        cell.draw(x1, y1, x2, y2)
+        if self.__win:
+            cell.draw(x1, y1, x2, y2)
+            self.__animate()
         
     def __animate(self) -> None:
-        self.__win.redraw()
-        # Sleep for 0.05 seconds to create an animation effect
-        self.__win.canvas.after(50)
+        if self.__win:
+            self.__win.redraw()
+            # Sleep for 0.05 seconds to create an animation effect
+            self.__win.canvas.after(50)
+
+    def __break_entrance_and_exit(self) -> None:
+        # Break the left wall of the first cell (entrance)
+        self.__cells[0][0].has_left_wall = False
+
+        # Redraw the first cell to reflect the broken wall
+        self.__draw_cell(0, 0)  
+
+        # Break the right wall of the last cell (exit)
+        self.__cells[self.__num_cols - 1][self.__num_rows - 1].has_right_wall = False
+
+        # Redraw the last cell to reflect the broken wall
+        self.__draw_cell(self.__num_cols - 1, self.__num_rows - 1)  
 
 # Create a main entrypoint function, and in it, create a window and wait for it to close:
 def main():
     window = Window(800, 600)
 
-    # Create a maze with 5 rows and 6 columns, starting at (50, 50), with each cell being 50x50 pixels
-    maze = Maze(50, 50, 5, 6, 50, 50, window)
+    # Create a maze
+    maze = Maze(50, 50, 5, 5, 50, 50, win=window)
+    maze._Maze__break_entrance_and_exit()  # Break the entrance and exit walls
 
     window.wait_for_close()
 
