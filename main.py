@@ -1,5 +1,6 @@
 from tkinter import Tk, BOTH, Canvas
 from turtle import undo
+import random
 
 class Window:
     def __init__(self, width, height, title="Maze Solver"):
@@ -62,6 +63,7 @@ class Cell:
         self.__y1 = 0
         self.__y2 = 0
         self.__win = window
+        self._visited = False # Track whether cell has had it's walls broken
 
     def draw(self, x1, y1, x2, y2):
         self.__x1 = x1
@@ -124,6 +126,7 @@ class Maze:
             cell_size_x: float,
             cell_size_y: float,
             win: Window=None,
+            seed: int=None
     ) -> None:
         self.__x1 = x1
         self.__y1 = y1
@@ -133,8 +136,13 @@ class Maze:
         self.__cell_size_y = cell_size_y
         self.__win = win    
         self.__cells = []
+        if seed is not None:
+            random.seed(seed)
 
         self.__create_cells()
+        self.__break_entrance_and_exit()  # Break the entrance and exit walls
+        self.__break_walls_r(0, 0)  # Start breaking walls from the top-left cell
+        self._reset_cells_visited()  # Reset visited status for all cells after maze generation
 
     def __create_cells(self) -> None:
         for col in range(self.__num_cols):
@@ -178,13 +186,68 @@ class Maze:
         # Redraw the last cell to reflect the broken wall
         self.__draw_cell(self.__num_cols - 1, self.__num_rows - 1)  
 
+    def __break_walls_r(self, i, j):
+        # 1. Mark current cell as visited
+        self.__cells[i][j]._visited = True
+
+        # 2. Infinite loop to keep breaking walls until all reachable neighbors are visited
+        while True:
+            unvisited_neighbors = []
+
+            # Check UP (i, j - 1)
+            if j > 0 and not self.__cells[i][j - 1]._visited:
+                unvisited_neighbors.append((i, j - 1))
+
+            # Check DOWN (i, j + 1)
+            if j < self.__num_rows - 1 and not self.__cells[i][j + 1]._visited:
+                unvisited_neighbors.append((i, j + 1))
+
+            # Check LEFT (i - 1, j)
+            if i > 0 and not self.__cells[i - 1][j]._visited:
+                unvisited_neighbors.append((i - 1, j))
+
+            # Check RIGHT (i + 1, j)
+            if i < self.__num_cols - 1 and not self.__cells[i + 1][j]._visited:
+                unvisited_neighbors.append((i + 1, j))
+
+            # If no unvisited neighbors, draw cell and return to backtrack
+            if len(unvisited_neighbors) == 0:
+                self.__draw_cell(i, j)
+                return
+
+            # Pick random direction
+            next_i, next_j = random.choice(unvisited_neighbors)
+
+            # Knock down walls between (i, j) and (next_i, next_j)
+            if next_i == i - 1:  # Left
+                self.__cells[i][j].has_left_wall = False
+                self.__cells[next_i][next_j].has_right_wall = False
+            elif next_i == i + 1:  # Right
+                self.__cells[i][j].has_right_wall = False
+                self.__cells[next_i][next_j].has_left_wall = False
+            elif next_j == j - 1:  # Up
+                self.__cells[i][j].has_top_wall = False
+                self.__cells[next_i][next_j].has_bottom_wall = False
+            elif next_j == j + 1:  # Down
+                self.__cells[i][j].has_bottom_wall = False
+                self.__cells[next_i][next_j].has_top_wall = False
+
+            # Recurse into chosen neighbor
+            self.__break_walls_r(next_i, next_j)
+
+    def _reset_cells_visited(self):
+        for col in range(self.__num_cols):
+            for row in range(self.__num_rows):
+                self.__cells[col][row]._visited = False
+            for row in range(self.__num_rows):
+                self.__cells[col][row]._visited = False
+
 # Create a main entrypoint function, and in it, create a window and wait for it to close:
 def main():
     window = Window(800, 600)
 
     # Create a maze
     maze = Maze(50, 50, 5, 5, 50, 50, win=window)
-    maze._Maze__break_entrance_and_exit()  # Break the entrance and exit walls
 
     window.wait_for_close()
 

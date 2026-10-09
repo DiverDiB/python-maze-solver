@@ -95,6 +95,19 @@ def test_break_entrance_and_exit(self):
     # Check that the exit wall is broken
     self.assertFalse(m1._Maze__cells[num_cols - 1][num_rows - 1].has_right_wall)
 
+def test_reset_cells_visited(self):
+    num_cols = 12
+    num_rows = 10
+    m1 = Maze(0, 0, num_rows, num_cols, 10, 10)
+    
+    # Iterate through every cell in the grid and check that _visited is False
+    for col in range(num_cols):
+        for row in range(num_rows):
+            self.assertEqual(
+                m1._Maze__cells[col][row]._visited,
+                False,
+            )
+
 def main():
     if __name__ == "__main__":
         unittest.main()
