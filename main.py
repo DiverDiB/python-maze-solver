@@ -289,7 +289,7 @@ def main():
     window = Window(800, 600)
 
     # Create a maze
-    maze = Maze(50, 50, 8, 8, 50, 50, win=window)
+    maze = Maze(50, 50, 10, 12, 50, 50, win=window)
     maze.solve()
 
     window.wait_for_close()
