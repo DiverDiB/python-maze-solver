@@ -242,12 +242,55 @@ class Maze:
             for row in range(self.__num_rows):
                 self.__cells[col][row]._visited = False
 
+    def solve(self) -> bool:
+        self._reset_cells_visited()  # Reset visited status before solving
+        return self._solve_r(0, 0)
+
+    def _solve_r(self, i, j) -> bool:
+        self.__animate()
+        self.__cells[i][j]._visited = True
+        # Base case: if we are at the exit cell, return True
+        if i == self.__num_cols - 1 and j == self.__num_rows - 1:
+            return True
+        # Explore neighbors in the order: UP, DOWN, LEFT, RIGHT
+        # UP
+        if j > 0 and not self.__cells[i][j - 1]._visited and not self.__cells[i][j].has_top_wall:
+            self.__cells[i][j].draw_move(self.__cells[i][j - 1])
+            if self._solve_r(i, j - 1):
+                return True
+            else:
+                self.__cells[i][j].draw_move(self.__cells[i][j - 1], undo=True)
+        # DOWN
+        if j < self.__num_rows - 1 and not self.__cells[i][j + 1]._visited and not self.__cells[i][j].has_bottom_wall:
+            self.__cells[i][j].draw_move(self.__cells[i][j + 1])
+            if self._solve_r(i, j + 1):
+                return True
+            else:
+                self.__cells[i][j].draw_move(self.__cells[i][j + 1], undo=True)
+        # LEFT
+        if i > 0 and not self.__cells[i - 1][j]._visited and not self.__cells[i][j].has_left_wall:
+            self.__cells[i][j].draw_move(self.__cells[i - 1][j])
+            if self._solve_r(i - 1, j):
+                return True
+            else:
+                self.__cells[i][j].draw_move(self.__cells[i - 1][j], undo=True)
+        # RIGHT
+        if i < self.__num_cols - 1 and not self.__cells[i + 1][j]._visited and not self.__cells[i][j].has_right_wall:
+            self.__cells[i][j].draw_move(self.__cells[i + 1][j])
+            if self._solve_r(i + 1, j):
+                return True
+            else:
+                self.__cells[i][j].draw_move(self.__cells[i + 1][j], undo=True)
+        return False
+        
+
 # Create a main entrypoint function, and in it, create a window and wait for it to close:
 def main():
     window = Window(800, 600)
 
     # Create a maze
-    maze = Maze(50, 50, 5, 5, 50, 50, win=window)
+    maze = Maze(50, 50, 8, 8, 50, 50, win=window)
+    maze.solve()
 
     window.wait_for_close()
 
